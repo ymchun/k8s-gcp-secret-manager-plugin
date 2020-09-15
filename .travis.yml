@@ -1,0 +1,19 @@
+language: go
+go:
+  - "1.15.x"
+install:
+  - go mod download
+script: go test -v ./...
+before_deploy:
+  - make
+  - shasum -a 256 ./build/k8splugin > ./build/k8splugin.checksum
+deploy:
+  edge: true
+  provider: releases
+  token: "$github_token"
+  file_glob: true
+  file: ./build/*
+  cleanup: false
+  on:
+    tags: true
+    repo: ymchun/k8s-gcp-secret-manager-plugin

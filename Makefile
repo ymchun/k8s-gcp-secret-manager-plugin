@@ -18,7 +18,7 @@ export GO111MODULE = on
 build:
 	@GOOS=linux GOARCH=amd64 go build \
 	  -a \
-		-ldflags "-s -w -extldflags 'static'"  \
+		-ldflags "-s -w -extldflags 'static'" \
 		-installsuffix cgo \
 		-tags netgo \
 		-o build/k8splugin \

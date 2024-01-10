@@ -5,8 +5,8 @@ resources:
       - secrets
     providers:
       - kms:
+          apiVersion: v2
           name: GCPSecretManager
           endpoint: unix:///var/run/k8splugin.sock
-          cachesize: 10
           timeout: 3s
       - identity: {}

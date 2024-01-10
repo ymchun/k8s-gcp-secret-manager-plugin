@@ -21,18 +21,18 @@ import (
 	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/golang/glog"
 	"github.com/ymchun/k8s-gcp-secret-manager-plugin/internal/secret"
 	"google.golang.org/api/option"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	"google.golang.org/grpc"
 )
 
 const (
 	netProtocol    = "unix"
-	apiVersion     = "v1beta1"
+	apiVersion     = "v2"
 	runtimeName    = "GCP Secret Manager"
-	runtimeVersion = "1.0.0"
+	runtimeVersion = "2.0.0"
 )
 
 // Plugin is a GCP Secret Manager plugin for K8S.
@@ -64,9 +64,9 @@ func (g *Plugin) Init() error {
 	return nil
 }
 
-// Version returns the version of KMS Plugin.
-func (g *Plugin) Version(ctx context.Context, request *VersionRequest) (*VersionResponse, error) {
-	return &VersionResponse{Version: apiVersion, RuntimeName: runtimeName, RuntimeVersion: runtimeVersion}, nil
+// Status returns the version of KMS Plugin.
+func (g *Plugin) Status(ctx context.Context, request *StatusRequest) (*StatusResponse, error) {
+	return &StatusResponse{Version: apiVersion, Healthz: "ok", KeyId: g.MasterKeyURI}, nil
 }
 
 // Encrypt encrypts payload provided by K8S API Server.
@@ -89,7 +89,7 @@ func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (*Encrypt
 	secret := &secret.Secret{
 		Key: resp.Payload.Data,
 	}
-	ciphertext, err := secret.Encrypt(request.Plain)
+	ciphertext, err := secret.Encrypt(request.Plaintext)
 
 	if err != nil {
 		glog.Errorf("Failed to encrypt request: %v\n", err)
@@ -99,7 +99,7 @@ func (g *Plugin) Encrypt(ctx context.Context, request *EncryptRequest) (*Encrypt
 	// remove the key from RAM
 	secret.Destroy()
 
-	return &EncryptResponse{Cipher: ciphertext}, nil
+	return &EncryptResponse{Ciphertext: ciphertext, KeyId: g.MasterKeyURI}, nil
 }
 
 // Decrypt decrypts payload supplied by K8S API Server.
@@ -123,7 +123,7 @@ func (g *Plugin) Decrypt(ctx context.Context, request *DecryptRequest) (*Decrypt
 		Key: resp.Payload.Data,
 	}
 
-	plaintext, err := secret.Decrypt(request.Cipher)
+	plaintext, err := secret.Decrypt(request.Ciphertext)
 
 	if err != nil {
 		glog.Errorf("Failed to decrypt request: %v\n", err)
@@ -133,7 +133,7 @@ func (g *Plugin) Decrypt(ctx context.Context, request *DecryptRequest) (*Decrypt
 	// remove the key from RAM
 	secret.Destroy()
 
-	return &DecryptResponse{Plain: plaintext}, nil
+	return &DecryptResponse{Plaintext: plaintext}, nil
 }
 
 func (g *Plugin) setupRPCServer() error {

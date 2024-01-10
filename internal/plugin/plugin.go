@@ -32,7 +32,7 @@ const (
 	netProtocol    = "unix"
 	apiVersion     = "v1beta1"
 	runtimeName    = "GCP Secret Manager"
-	runtimeVersion = "0.0.1"
+	runtimeVersion = "1.0.0"
 )
 
 // Plugin is a GCP Secret Manager plugin for K8S.
